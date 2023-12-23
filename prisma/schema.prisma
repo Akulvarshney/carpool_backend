@@ -1,0 +1,165 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Auth {
+  authentication_id  String   @id
+  emailId            String   @unique
+  password           String
+  created_on         DateTime @default(now())
+  role               String
+  users              Users?
+  drivers            Driver?
+}
+
+model PlantMaster {
+  plant_uuid_id String   @id 
+  plant_id      String  
+  plant_name    String   
+  drivers Driver[]
+  tripRequest TripRequest[]
+}
+
+model ShiftsMaster {
+  Shift_ID   String   @id 
+  StartTime  DateTime
+  EndTime    DateTime
+  Shift_name String  
+  drivers           Driver[]  
+}
+
+model Users {
+  user_id           String    @id 
+  authentication Auth @relation(fields: [authentication_id], references: [authentication_id])
+  authentication_id String    @unique
+  name              String    @db.VarChar(255)
+  address           String?   @db.VarChar(255)
+  triprequested     Int       @default(0)
+  designation       String?   @db.VarChar(50)
+  dob               DateTime? @db.Date
+  profile_image     String?   @db.VarChar(255)
+  mobile_number     String?   @db.VarChar(15)
+  role              String?   @db.VarChar(50)
+  employee_Id       String?   @db.VarChar(50) @unique
+  created_on        DateTime  @default(now())
+  drivers           Driver[]  
+  tripRequest TripRequest[]
+}
+
+model VehicleOwner {
+  vehicle_owner_id String    @id
+  owner_name        String   
+  sex               String   
+  phone_number      String   
+  email_id          String    
+  state             String    
+  city              String    
+  address           String    
+  cars              Vehicle[]   
+}
+
+model Vehicle {
+  vehicle_id           String        @id @unique
+  vehicle_plate        String        @db.VarChar(20)
+  vehicle_type         String        @db.VarChar(50)
+  vehicle_description  String        @db.VarChar(255)
+  vehicle_owner        VehicleOwner  @relation(fields: [vehicle_owner_id], references: [vehicle_owner_id])
+  vehicle_owner_id     String
+  vehicle_status       String        @db.VarChar(50)
+  tripRequest TripRequest[]
+  HandoverReceive HandoverReceive[]
+  current_drivers      Driver?    
+  vehicle Maintenance[]
+}
+
+model Driver {
+  driver_id           String        @id 
+  authentication      Auth          @relation(fields: [authentication_id], references: [authentication_id])
+  authentication_id   String        @unique
+  driver_employee_id  String        @unique
+  emailId             String       
+  vehicle_type        String[]     
+  name                String        
+  mobile_number       String       
+  location            String      
+  city                String       
+  state               String      
+  sex                 String        
+  plant_uuid          PlantMaster   @relation(fields: [plant_uuid_id], references: [plant_uuid_id])
+  plant_uuid_id       String  
+  jobgrade            String       
+  experience          Int
+  rating              Decimal       
+  trips_completed     Int           @default(0)
+  dob                 DateTime      
+  profile_image       String       
+  added_by_relation   Users         @relation(fields: [added_by], references: [authentication_id])
+  added_by            String
+  shift               ShiftsMaster  @relation(fields: [shift_id], references: [Shift_ID])
+  shift_id            String
+  created_on          DateTime      @default(now())
+  current_vehicle     Vehicle?      @relation(fields: [current_vehicle_id], references: [vehicle_id])
+  current_vehicle_id  String?       @unique
+  tripRequest TripRequest[]
+  HandoverReceive HandoverReceive[]
+}
+
+model TripRequest {
+  trip_id                String        @id 
+  plant_uuid             PlantMaster   @relation(fields: [plant_uuid_id], references: [plant_uuid_id])
+  plant_uuid_id          String
+  request_number         Int           @default(autoincrement())
+  user                   Users         @relation(fields: [user_id], references: [user_id])
+  user_id                String
+  vehicle_type           String
+  purpose                String
+  department             String
+  priority               String
+  passengers_number      Int
+  people                 String[]      
+  start_time             DateTime
+  end_time               DateTime
+  from_destination       String
+  to_destination         String
+  pickup_point           String
+  trip_type              String
+  status                 String @default("PENDING")
+  comments               String
+  rating                 Int
+  approved_by_manager    Boolean
+  assigned_car           Vehicle       @relation(fields: [assigned_car_id], references: [vehicle_id])
+  assigned_car_id        String
+  assigned_driver        Driver        @relation(fields: [assigned_driver_id], references: [driver_id])
+  assigned_driver_id     String
+  updated_at             DateTime      @default(now())
+}
+
+model HandoverReceive {
+  id               String      @id
+  date_time        DateTime
+  vehicle          Vehicle     @relation(fields: [vehicle_id], references: [vehicle_id])
+  vehicle_id       String
+  driver           Driver      @relation(fields: [driver_id], references: [driver_id])
+  driver_id        String
+  comments         String?
+  status           String      // Can be "RECEIVED" or "HANDOVER"
+  vehicle_photos  String[]   // Array of photo links
+  form_photo  String?      // Single photo link for the form
+}
+
+model Maintenance {
+  maintenanceId         String    @id 
+  vehicle               Vehicle   @relation(fields: [vehicleId], references: [vehicle_id])
+  vehicleId             String
+  maintenance_type      String   
+  city                  String    
+  maintenance_date      DateTime
+  maintenance_time      DateTime
+  maintenance_message   String    
+  maintenance_status    String    
+}
